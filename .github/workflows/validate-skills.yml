@@ -1,0 +1,59 @@
+name: Validate skills
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install skills-ref (pinned)
+        run: pip install "git+https://github.com/agentskills/agentskills@83021e2be457a9b6679148719c1f6074f0ad975e#subdirectory=skills-ref"
+
+      - name: Validate each skill
+        run: |
+          status=0
+          for dir in skills/*/; do
+            echo "Validating $dir"
+            skills-ref validate "$dir" || status=1
+          done
+          exit $status
+
+      - name: Check SKILL.md length and description
+        run: |
+          status=0
+          for f in skills/*/SKILL.md; do
+            lines=$(wc -l < "$f")
+            if [ "$lines" -ge 500 ]; then
+              echo "::error file=$f::SKILL.md has $lines lines; keep it under 500"
+              status=1
+            fi
+            if ! awk '/^---$/{n++; next} n==1' "$f" | grep -q 'Use when'; then
+              echo "::error file=$f::description must say when to use the skill (a sentence starting \"Use when\")"
+              status=1
+            fi
+          done
+          exit $status
+
+      - name: Check marketplace.json lists every skill
+        run: |
+          status=0
+          for dir in skills/*/; do
+            name=$(basename "$dir")
+            if ! grep -q "\"./skills/$name\"" .claude-plugin/marketplace.json; then
+              echo "::error file=.claude-plugin/marketplace.json::skill $name is missing from marketplace.json"
+              status=1
+            fi
+          done
+          exit $status

@@ -1,0 +1,21 @@
+{
+  "name": "drupal-agent-skills",
+  "owner": {
+    "name": "Salman Haider"
+  },
+  "metadata": {
+    "description": "Agent skills for Drupal projects",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "drupal-agent-skills",
+      "description": "Drupal agent skills: verdict-first, read-only pull request review, with more skills planned",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/drupal-pr-review"
+      ]
+    }
+  ]
+}
